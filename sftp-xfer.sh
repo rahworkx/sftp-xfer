@@ -1,8 +1,8 @@
 #!/bin/bash
 
 ##################################
-#### Sftp Xfer        ############
-# Author: github.com/rahworkx . ##
+####    Sftp Xfer     ############
+# Author: github.com/rahworkx   ##
 # OS: Built For Centos          ##
 # ################################
 
