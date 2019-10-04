@@ -22,7 +22,7 @@ pub_key="$3"
 #if [ $# -lt 2 ]
 #then
 #        echo "This script must be run with super-user privileges."
-#        echo -e "\nUsage:\n sudo sh add_sftp_user.sh sftpuser sftpuser_sftpgrp  id_rsa.pub --if applicable-- \n"
+#        echo -e "\nUsage:\n sudo sh add_sftp_user.sh sftpuser sftpuser_sftpgrp  /file/path/id_rsa.pub --if applicable-- \n"
 #fi
 
 ## Make sure the Group Exists ##
@@ -93,9 +93,9 @@ then
 else
       echo "Adding key to the users authorized list"
       mkdir /home/$sftp_user/.ssh
-      cd /home/$sftp_user && chmod 600 .ssh
-      cd /home/$sftp_user/.ssh && touch authorized_keys
-      cd /home/$sftp_user/.ssh && chmod 700 authorized_keys
+      cd /home/$sftp_user && chmod 700 .ssh
+      mv "$pub_key" /home/$sftp_user/.ssh/authorized_keys
+      cd /home/$sftp_user/.ssh && chmod 600 authorized_keys
       cat "$pub_key" >> /home/$sftp_user/.ssh/authorized_keys
       cd /home/$sftp_user && chown -R $sftp_user:$sftp_user .ssh
 fi
@@ -108,6 +108,7 @@ then
   echo "
 ## Sftp $sftp_user Group Jail ##
 Match group $sftp_group
+AuthorizedKeysFile /home/$sftp_user/.ssh/authorized_keys
 ChrootDirectory $JAILPATH
 AllowTCPForwarding no
 X11Forwarding no
