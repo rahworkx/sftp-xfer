@@ -1,28 +1,17 @@
 #!/bin/bash
 
-##################################
-####    Sftp Xfer     ############
-# Author: github.com/rahworkx   ##
-# OS: Built For Centos          ##
-# ################################
-
-##################################################################
-#### Description  ################################################
-# Creates Sftp User Multiple Directories, adds pub key          ##
-# and Jails User			                        ##									
-##################################################################
 
 ## Vars
 sftp_user=$1
 sftp_group=$2
 JAILPATH="/home/$sftp_user"
-user_pass="$(aws secretsmanager get-random-password --password-length 15 --exclude-punctuation --query 'RandomPassword' --output text --region us-west-2)"
-pub_key="$3"
+user_pass="$(/usr/local/bin/aws secretsmanager get-random-password --password-length 15 --exclude-punctuation --query 'RandomPassword' --output text --region us-west-2)"
+wrkr_key="$3"
 
 #if [ $# -lt 2 ]
 #then
 #        echo "This script must be run with super-user privileges."
-#        echo -e "\nUsage:\n sudo sh add_sftp_user.sh sftpuser sftpuser_sftpgrp  /file/path/id_rsa.pub --if applicable-- \n"
+#        echo -e "\nUsage:\n sudo sh add_sftp_user.sh sftpuser sftpuser_sftpgrp  /file/path/ssh.pub --if applicable-- \n"
 #fi
 
 ## Make sure the Group Exists ##
@@ -33,6 +22,7 @@ else
         echo "Group does not exist, Creating Group $sftp_group..."
         groupadd $sftp_group
 fi
+
 
 ## Make Sure User Exists ##
 /bin/egrep  -i "^${sftp_user}" /etc/passwd
@@ -86,17 +76,16 @@ fi
 usermod -s /usr/sbin/nologin $sftp_user
 chmod 755 /home/$sftp_user
 
-## Add Pub Key to User Authorized Keys ##
-if [ -z "$pub_key" ]
+## Add Pub Key from worker to User Authorized Keys ##
+if [ -z "$wrkr_key" ]
 then
-      echo "Pub Key is empty, Not adding a Key"
+      echo "Wrker Key is empty, Not adding a Key"
 else
-      echo "Adding key to the users authorized list"
+      echo "Adding the Worker key to the users authorized list"
       mkdir /home/$sftp_user/.ssh
       cd /home/$sftp_user && chmod 700 .ssh
-      mv "$pub_key" /home/$sftp_user/.ssh/authorized_keys
+      mv $wrkr_key /home/$sftp_user/.ssh/authorized_keys
       cd /home/$sftp_user/.ssh && chmod 600 authorized_keys
-      cat "$pub_key" >> /home/$sftp_user/.ssh/authorized_keys
       cd /home/$sftp_user && chown -R $sftp_user:$sftp_user .ssh
 fi
 
@@ -116,7 +105,9 @@ ForceCommand internal-sftp
 " >> /etc/ssh/sshd_config
 fi
 
+
 echo "#### Completed Addition Of SFTP User ####"
+echo "HOST: xfer.materialbank.com"
 echo "USER: $sftp_user"
 echo "PASS: $user_pass"
 echo "### Restarting SSH Daemon for changes to take affect ####"
